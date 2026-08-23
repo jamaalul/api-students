@@ -222,3 +222,16 @@ func patchStudent(c *fiber.Ctx) error {
 
 	return ok(c, "student berhasil diperbarui sebagian", students[i])
 }
+
+func deleteStudent(c *fiber.Ctx) error {
+	id, valid := paramID(c)
+	if !valid {
+		return fail(c, fiber.StatusBadRequest, "id harus berupa angka positif")
+	}
+	i := findStudentIndex(id)
+	if i == -1 {
+		return fail(c, fiber.StatusNotFound, "student tidak ditemukan")
+	}
+	students = append(students[:i], students[i+1:]...)
+	return noContent(c)
+}
