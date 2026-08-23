@@ -184,3 +184,41 @@ func replaceStudent(c *fiber.Ctx) error {
 	students[i].IsActive = req.IsActive
 	return ok(c, "student berhasil diganti seluruhnya", students[i])
 }
+
+func patchStudent(c *fiber.Ctx) error {
+	id, valid := paramID(c)
+	if !valid {
+		return fail(c, fiber.StatusBadRequest, "id harus berupa angka positif")
+	}
+	i := findStudentIndex(id)
+	if i == -1 {
+		return fail(c, fiber.StatusNotFound, "student tidak ditemukan")
+	}
+
+	var req PatchStudentRequest
+	if err := c.BodyParser(&req); err != nil {
+		return fail(c, fiber.StatusBadRequest, "body harus berupa JSON yang valid")
+	}
+
+	if req.Name == nil && req.Grade == nil && req.IsActive == nil {
+		return fail(c, fiber.StatusBadRequest, "tidak ada field yang diubah")
+	}
+
+	if req.Name != nil {
+		if strings.TrimSpace(*req.Name) == "" {
+			return failValidation(c, map[string]string{"name": "tidak boleh kosong"})
+		}
+		students[i].Name = *req.Name
+	}
+	if req.Grade != nil {
+		if *req.Grade < 0 || *req.Grade > 100 {
+			return failValidation(c, map[string]string{"grade": "harus di antara 0 dan 100"})
+		}
+		students[i].Grade = *req.Grade
+	}
+	if req.IsActive != nil {
+		students[i].IsActive = *req.IsActive
+	}
+
+	return ok(c, "student berhasil diperbarui sebagian", students[i])
+}
