@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -107,4 +108,47 @@ func getStudent(c *fiber.Ctx) error {
 		return fail(c, fiber.StatusNotFound, "student tidak ditemukan")
 	}
 	return ok(c, "student ditemukan", students[i])
+}
+
+func createStudent(c *fiber.Ctx) error {
+	var req CreateStudentRequest
+	if err := c.BodyParser(&req); err != nil {
+		return fail(c, fiber.StatusBadRequest, "body harus berupa JSON yang valid")
+	}
+
+	errs := map[string]string{}
+	req.Name = strings.TrimSpace(req.Name)
+	req.NIM = strings.TrimSpace(req.NIM)
+
+	if req.NIM == "" {
+		errs["nim"] = "wajib diisi"
+	}
+	if req.Name == "" {
+		errs["name"] = "wajib diisi"
+	}
+	if req.Grade < 0 || req.Grade > 100 {
+		errs["grade"] = "harus di antara 0 dan 100"
+	}
+	if len(errs) > 0 {
+		return failValidation(c, errs)
+	}
+
+	// NIM adalah identitas unik — duplikat berarti konflik data, bukan salah input
+	if findStudentByNIM(req.NIM) != -1 {
+		return fail(c, fiber.StatusConflict, "NIM sudah terdaftar")
+	}
+
+	baru := Student{
+		ID:        nextID,
+		NIM:       req.NIM,
+		Name:      req.Name,
+		Grade:     req.Grade,
+		IsActive:  true,
+		CreatedAt: time.Now(),
+	}
+	students = append(students, baru)
+	nextID++
+
+	return created(c, "student berhasil dibuat", baru,
+		"/api/v1/students/"+strconv.Itoa(baru.ID))
 }
