@@ -152,3 +152,35 @@ func createStudent(c *fiber.Ctx) error {
 	return created(c, "student berhasil dibuat", baru,
 		"/api/v1/students/"+strconv.Itoa(baru.ID))
 }
+
+func replaceStudent(c *fiber.Ctx) error {
+	id, valid := paramID(c)
+	if !valid {
+		return fail(c, fiber.StatusBadRequest, "id harus berupa angka positif")
+	}
+	i := findStudentIndex(id)
+	if i == -1 {
+		return fail(c, fiber.StatusNotFound, "student tidak ditemukan")
+	}
+
+	var req ReplaceStudentRequest
+	if err := c.BodyParser(&req); err != nil {
+		return fail(c, fiber.StatusBadRequest, "body harus berupa JSON yang valid")
+	}
+
+	errs := map[string]string{}
+	if strings.TrimSpace(req.Name) == "" {
+		errs["name"] = "wajib diisi pada PUT"
+	}
+	if req.Grade < 0 || req.Grade > 100 {
+		errs["grade"] = "wajib diisi dan di antara 0-100 pada PUT"
+	}
+	if len(errs) > 0 {
+		return failValidation(c, errs)
+	}
+
+	students[i].Name = req.Name
+	students[i].Grade = req.Grade
+	students[i].IsActive = req.IsActive
+	return ok(c, "student berhasil diganti seluruhnya", students[i])
+}
