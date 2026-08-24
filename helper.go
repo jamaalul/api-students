@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
 	"api-students/app/model"
 )
+
+func reqCtx(c *fiber.Ctx) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(c.UserContext(), 5*time.Second)
+}
 
 func ok(c *fiber.Ctx, message string, data any) error {
 	return c.Status(fiber.StatusOK).JSON(model.WebResponse{
