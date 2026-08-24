@@ -1,0 +1,26 @@
+# Binaries
+/app
+/main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file (if you don't use workspaces, safe to include anyway)
+go.work
+go.work.sum
+
+# Env files (if you add one later for secrets/config)
+.env
+
+# IDE/editor junk
+.vscode/
+.idea/
+*.swp
