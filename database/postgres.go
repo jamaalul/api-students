@@ -9,11 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// NewPool membuat connection pool ke PostgreSQL.
-//
-// Pool, bukan koneksi tunggal: server melayani banyak permintaan sekaligus,
-// sedangkan membuka koneksi baru untuk setiap permintaan sangat mahal.
-// Pool menyediakan sejumlah koneksi siap pakai yang dipinjam lalu dikembalikan.
 func NewPool(ctx context.Context) (*pgxpool.Pool, error) {
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
@@ -36,8 +31,7 @@ func NewPool(ctx context.Context) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("gagal membuat pool: %w", err)
 	}
-	// Ping memastikan kredensial benar dan server memang dapat dihubungi.
-	// Tanpa ini, kesalahan baru ketahuan saat permintaan pertama masuk.
+
 	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := pool.Ping(pingCtx); err != nil {

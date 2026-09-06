@@ -17,9 +17,6 @@ var (
 	ErrDuplicate = errors.New("data sudah ada")
 )
 
-// StudentRepository adalah KONTRAK penyimpanan data student.
-// Tidak ada satu pun kata "SQL" atau "postgres" di sini — supaya handler
-// bisa dipasangkan ke implementasi penyimpanan apa pun tanpa berubah.
 type StudentRepository interface {
 	FindAll(ctx context.Context, q model.ListQuery) ([]model.Student, int, error)
 	FindByID(ctx context.Context, id int) (model.Student, error)
