@@ -12,29 +12,33 @@ import (
 	"api-students/middleware"
 )
 
-// Register memetakan URL ke method service yang menanganinya.
-func Register(app *fiber.App, pool *pgxpool.Pool, studentService *service.StudentService) {
-	api := app.Group("/api/v1")
-	api.Get("/health", healthCheck(pool))
-
-	students := api.Group("/students", middleware.RequireJSON)
-	students.Get("/", studentService.List)
-	students.Get("/:id", studentService.Get)
-	students.Post("/", studentService.Create)
-	students.Put("/:id", studentService.Replace)
-	students.Patch("/:id", studentService.Patch)
-	students.Delete("/:id", studentService.Delete)
-
-	auth := api.Group("/auth", middleware.RequireJSON)
-	auth.Post("/register")
-	auth.Post("/login")
-	auth.Post("/refresh")
-
-	users := auth.Group("/users")
-	users.Get("/me")
+type Dependencies struct {
+	Pool           *pgxpool.Pool
+	JWT            *helper.JWTManager
+	AuthService    *service.AuthService
+	StudentService *service.StudentService
 }
 
-// healthCheck memeriksa kondisi server dan koneksi database.
+func Register(app *fiber.App, deps Dependencies) {
+	api := app.Group("/api/v1")
+	api.Get("/health", healthCheck(deps.Pool))
+
+	students := api.Group("/students", middleware.RequireAuth(deps.JWT), middleware.RequireJSON)
+	students.Get("/", deps.StudentService.List)
+	students.Get("/:id", deps.StudentService.Get)
+	students.Post("/", deps.StudentService.Create)
+	students.Put("/:id", deps.StudentService.Replace)
+	students.Patch("/:id", deps.StudentService.Patch)
+	students.Delete("/:id", deps.StudentService.Delete)
+
+	auth := api.Group("/auth", middleware.RequireJSON)
+	auth.Post("/register", deps.AuthService.Register)
+	auth.Post("/login", middleware.LoginRateLimiter(), deps.AuthService.Login)
+	auth.Post("/refresh", deps.AuthService.Refresh)
+	auth.Post("/logout", deps.AuthService.Logout)
+	auth.Get("/me", middleware.RequireAuth(deps.JWT), deps.AuthService.Me)
+}
+
 func healthCheck(pool *pgxpool.Pool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx, cancel := context.WithTimeout(c.UserContext(), 2*time.Second)

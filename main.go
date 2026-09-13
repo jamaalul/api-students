@@ -12,6 +12,8 @@ import (
 	"api-students/app/service"
 	"api-students/config"
 	"api-students/database"
+	"api-students/helper"
+	"api-students/route"
 )
 
 func main() {
@@ -28,11 +30,29 @@ func main() {
 	defer pool.Close()
 
 	// 3. Perakitan dependensi: repository -> service
-	studentRepository := repository.NewStudentRepository(pool)
-	studentService := service.NewStudentService(studentRepository)
+	studentRepo := repository.NewStudentRepository(pool)
+	userRepo := repository.NewUserRepository(pool)
+	tokenRepo := repository.NewTokenRepository(pool)
+
+	jwtSecret := config.GetEnv("JWT_SECRET", "changeme")
+	jwtIssuer := config.GetEnv("JWT_ISSUER", "api-students")
+	jwtTTL, _ := time.ParseDuration(config.GetEnv("JWT_ACCESS_TTL", "15m"))
+	refreshTTL, _ := time.ParseDuration(config.GetEnv("JWT_REFRESH_TTL", "168h"))
+
+	jwtManager := helper.NewJWTManager(jwtSecret, jwtIssuer, jwtTTL)
+
+	studentService := service.NewStudentService(studentRepo)
+	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager, refreshTTL)
+
+	deps := route.Dependencies{
+		Pool:           pool,
+		JWT:            jwtManager,
+		AuthService:    authService,
+		StudentService: studentService,
+	}
 
 	// 4. Aplikasi Fiber
-	app := config.NewApp(logger, pool, studentService)
+	app := config.NewApp(logger, deps)
 	port := config.GetEnv("APP_PORT", "3000")
 
 	go func() {

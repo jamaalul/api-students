@@ -3,19 +3,15 @@ package config
 import (
 	"log/slog"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/jackc/pgx/v5/pgxpool"
-
-	"api-students/app/service"
 	"api-students/helper"
 	"api-students/middleware"
 	"api-students/route"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // NewApp merakit aplikasi: membuat instance Fiber, memasang middleware, dan mendaftarkan route.
-func NewApp(
-	logger *slog.Logger, pool *pgxpool.Pool, studentService *service.StudentService,
-) *fiber.App {
+func NewApp(logger *slog.Logger, deps route.Dependencies) *fiber.App {
 	app := fiber.New(fiber.Config{
 		AppName:      GetEnv("APP_NAME", "Tugas Mandiri Pertemuan 4 - api-students"),
 		ErrorHandler: newErrorHandler(logger),
@@ -23,7 +19,7 @@ func NewApp(
 
 	allowedOrigins := GetEnv("ALLOWED_ORIGINS", "*")
 	middleware.Register(app, logger, allowedOrigins)
-	route.Register(app, pool, studentService)
+	route.Register(app, deps)
 
 	// Fallback untuk endpoint yang tidak terdaftar
 	app.Use(func(c *fiber.Ctx) error {
