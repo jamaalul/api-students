@@ -60,3 +60,7 @@ func RequireJSON(c *fiber.Ctx) error {
 	}
 	return c.Next()
 }
+
+func RequireAuth(c *fiber.Ctx) error {
+	return c.Next()
+}

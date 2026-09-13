@@ -17,13 +17,19 @@ func Register(app *fiber.App, pool *pgxpool.Pool, studentService *service.Studen
 	api := app.Group("/api/v1")
 	api.Get("/health", healthCheck(pool))
 
-	students := api.Group("/students", middleware.RequireJSON)
+	students := api.Group("/students", middleware.RequireJSON, middleware.RequireAuth)
 	students.Get("/", studentService.List)
 	students.Get("/:id", studentService.Get)
 	students.Post("/", studentService.Create)
 	students.Put("/:id", studentService.Replace)
 	students.Patch("/:id", studentService.Patch)
 	students.Delete("/:id", studentService.Delete)
+
+	users := api.Group("/users", middleware.RequireJSON)
+	users.Post("/auth/register")
+	users.Post("/auth/login")
+	users.Post("/auth/refresh")
+	users.Get("/me", middleware.RequireAuth)
 }
 
 // healthCheck memeriksa kondisi server dan koneksi database.
