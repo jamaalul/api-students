@@ -21,7 +21,8 @@ func NewApp(
 		ErrorHandler: newErrorHandler(logger),
 	})
 
-	middleware.Register(app, logger)
+	allowedOrigins := GetEnv("ALLOWED_ORIGINS", "*")
+	middleware.Register(app, logger, allowedOrigins)
 	route.Register(app, pool, studentService)
 
 	// Fallback untuk endpoint yang tidak terdaftar
