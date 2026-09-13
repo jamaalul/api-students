@@ -11,7 +11,7 @@ const (
 
 type User struct {
 	ID        int       `json:"id"`
-	Userame   string    `json:"username"`
+	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	Password  string    `json:"password"`
 	Role      Role      `json:"role"`
