@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
@@ -14,17 +15,14 @@ import (
 	"api-students/helper"
 )
 
-// Register memasang seluruh middleware yang berlaku untuk semua route.
-// Urutan pemasangan sangat penting.
-func Register(app *fiber.App, logger *slog.Logger) {
-	app.Use(requestid.New())       // 1. Beri ID unik tiap request
-	app.Use(recover.New())         // 2. Tangkap panic
-	app.Use(helmet.New())          // 3. Pasang header keamanan dasar
-	app.Use(cors.New())            // 4. Konfigurasi CORS
-	app.Use(RequestLogger(logger)) // 5. Catat log terstruktur
+func Register(app *fiber.App, logger *slog.Logger, allowedOrigins string) {
+	app.Use(requestid.New())
+	app.Use(recover.New())
+	app.Use(helmet.New())
+	app.Use(corsPolicy(allowedOrigins))
+	app.Use(RequestLogger(logger))
 }
 
-// RequestLogger mencatat setiap HTTP request ke structured logger (JSON).
 func RequestLogger(logger *slog.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
@@ -49,7 +47,6 @@ var methodsWithBody = map[string]bool{
 	fiber.MethodPatch: true,
 }
 
-// RequireJSON menolak request POST/PUT/PATCH bila Content-Type bukan application/json.
 func RequireJSON(c *fiber.Ctx) error {
 	if methodsWithBody[c.Method()] {
 		ct := c.Get("Content-Type")
@@ -61,6 +58,13 @@ func RequireJSON(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func RequireAuth(c *fiber.Ctx) error {
-	return c.Next()
+func corsPolicy(allowedOrigins string) fiber.Handler {
+	if strings.TrimSpace(allowedOrigins) == "" {
+		allowedOrigins = os.Getenv("ALLOWED_ORIGINS")
+	}
+	return cors.New(cors.Config{
+		AllowOrigins: allowedOrigins,
+		AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+	})
 }

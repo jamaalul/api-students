@@ -17,7 +17,7 @@ func Register(app *fiber.App, pool *pgxpool.Pool, studentService *service.Studen
 	api := app.Group("/api/v1")
 	api.Get("/health", healthCheck(pool))
 
-	students := api.Group("/students", middleware.RequireJSON, middleware.RequireAuth)
+	students := api.Group("/students", middleware.RequireJSON)
 	students.Get("/", studentService.List)
 	students.Get("/:id", studentService.Get)
 	students.Post("/", studentService.Create)
@@ -30,7 +30,7 @@ func Register(app *fiber.App, pool *pgxpool.Pool, studentService *service.Studen
 	auth.Post("/login")
 	auth.Post("/refresh")
 
-	users := auth.Group("/users", middleware.RequireAuth)
+	users := auth.Group("/users")
 	users.Get("/me")
 }
 
