@@ -157,7 +157,10 @@ func (s *AuthService) Me(c *fiber.Ctx) error {
 	if err != nil {
 		return helper.Fail(c, fiber.StatusUnauthorized, "user tidak ditemukan")
 	}
-	return helper.Success(c, fiber.StatusOK, "profil berhasil diambil", user)
+	return helper.Success(c, fiber.StatusOK, "profil berhasil diambil", fiber.Map{
+		"user":        user,
+		"permissions": s.perms.PermissionsOf(string(user.Role)),
+	})
 }
 
 func (s *AuthService) issueTokenPair(ctx context.Context, user model.User) (model.TokenPair, error) {
