@@ -17,6 +17,7 @@ type Dependencies struct {
 	JWT            *helper.JWTManager
 	AuthService    *service.AuthService
 	StudentService *service.StudentService
+	Permissions    *helper.PermissionSet
 }
 
 func Register(app *fiber.App, deps Dependencies) {

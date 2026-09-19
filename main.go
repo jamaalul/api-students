@@ -33,6 +33,7 @@ func main() {
 	studentRepo := repository.NewStudentRepository(pool)
 	userRepo := repository.NewUserRepository(pool)
 	tokenRepo := repository.NewTokenRepository(pool)
+	roleRepo := repository.NewRoleRepository(pool)
 
 	jwtSecret := config.GetEnv("JWT_SECRET", "changeme")
 	jwtIssuer := config.GetEnv("JWT_ISSUER", "api-students")
@@ -41,14 +42,23 @@ func main() {
 
 	jwtManager := helper.NewJWTManager(jwtSecret, jwtIssuer, jwtTTL)
 
+	rawPerms, err := roleRepo.LoadPermissions(context.Background())
+	if err != nil {
+		logger.Error("gagal memuat permission", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	perms := helper.NewPermissionSet(rawPerms)
+	logger.Info("permission dimuat", slog.Any("roles", perms.KnownRoles()))
+
 	studentService := service.NewStudentService(studentRepo)
-	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager, refreshTTL)
+	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager, refreshTTL, perms)
 
 	deps := route.Dependencies{
 		Pool:           pool,
 		JWT:            jwtManager,
 		AuthService:    authService,
 		StudentService: studentService,
+		Permissions:    perms,
 	}
 
 	// 4. Aplikasi Fiber
