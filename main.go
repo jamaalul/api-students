@@ -50,7 +50,7 @@ func main() {
 	perms := helper.NewPermissionSet(rawPerms)
 	logger.Info("permission dimuat", slog.Any("roles", perms.KnownRoles()))
 
-	studentService := service.NewStudentService(studentRepo)
+	studentService := service.NewStudentService(studentRepo, perms)
 	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager, refreshTTL, perms)
 
 	deps := route.Dependencies{
