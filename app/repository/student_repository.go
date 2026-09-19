@@ -106,7 +106,7 @@ func (r *studentPostgresRepository) FindAll(
 	hasil := []model.Student{}
 	for rows.Next() {
 		var s model.Student
-		if err := rows.Scan(&s.ID, &s.NIM, &s.Name, &s.Grade, &s.IsActive, &s.CreatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.NIM, &s.Name, &s.Grade, &s.IsActive, &s.OwnerID, &s.CreatedAt); err != nil {
 			return nil, 0, fmt.Errorf("membaca baris student: %w", err)
 		}
 		hasil = append(hasil, s)
@@ -123,9 +123,9 @@ func (r *studentPostgresRepository) FindByID(
 ) (model.Student, error) {
 	var s model.Student
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, nim, name, grade, is_active, created_at
-		 FROM students WHERE id = $1`, id,
-	).Scan(&s.ID, &s.NIM, &s.Name, &s.Grade, &s.IsActive, &s.CreatedAt)
+		`SELECT id, nim, name, grade, is_active, owner_id, created_at
+         FROM students WHERE id = $1`, id,
+	).Scan(&s.ID, &s.NIM, &s.Name, &s.Grade, &s.IsActive, &s.OwnerID, &s.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.Student{}, ErrNotFound
@@ -139,10 +139,10 @@ func (r *studentPostgresRepository) Create(
 	ctx context.Context, s model.Student,
 ) (model.Student, error) {
 	err := r.pool.QueryRow(ctx,
-		`INSERT INTO students (nim, name, grade, is_active)
-		 VALUES ($1, $2, $3, $4)
-		 RETURNING id, created_at`,
-		s.NIM, s.Name, s.Grade, s.IsActive,
+		`INSERT INTO students (nim, name, grade, is_active, owner_id)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, created_at`,
+		s.NIM, s.Name, s.Grade, s.IsActive, s.OwnerID,
 	).Scan(&s.ID, &s.CreatedAt)
 	if err != nil {
 		if isUniqueViolation(err) {
