@@ -45,9 +45,15 @@ func RequestLogger(logger *slog.Logger) fiber.Handler {
 			slog.String("request_id", requestID),
 			slog.String("method", c.Method()),
 			slog.String("path", c.Path()),
-			slog.Int("status", status), // Pastikan memakai variabel status yang sudah dikoreksi
+			slog.Int("status", status),
 			slog.Duration("duration", time.Since(start)),
 			slog.String("ip", c.IP()),
+		}
+
+		if user, ok := helper.CurrentUser(c); ok {
+			attrs = append(attrs,
+				slog.Int("user_id", user.UserID),
+				slog.String("role", user.Role))
 		}
 
 		logger.Info("http_request", attrs...)
@@ -65,8 +71,7 @@ func RequireJSON(c *fiber.Ctx) error {
 	if methodsWithBody[c.Method()] {
 		ct := c.Get("Content-Type")
 		if !strings.HasPrefix(ct, fiber.MIMEApplicationJSON) {
-			return helper.Fail(c, fiber.StatusUnsupportedMediaType,
-				"Content-Type harus application/json")
+			return helper.UnsupportedMediaType("Content-Type harus application/json")
 		}
 	}
 	return c.Next()
