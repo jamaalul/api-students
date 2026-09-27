@@ -26,19 +26,19 @@ func Register(app *fiber.App, deps Dependencies) {
 
 	perms := deps.Permissions
 
-	students := api.Group("/students", middleware.RequireAuth(deps.JWT), middleware.RequireJSON)
+	students := api.Group("/students", middleware.RequireAuth(deps.JWT))
 	students.Get("/", middleware.RequirePermission(perms, "student:list"), deps.StudentService.List)
-	students.Post("/", middleware.RequirePermission(perms, "student:create"), deps.StudentService.Create)
+	students.Post("/", middleware.RequireJSON, middleware.RequirePermission(perms, "student:create"), deps.StudentService.Create)
 	students.Delete("/:id", middleware.RequirePermission(perms, "student:delete"), deps.StudentService.Delete)
 	students.Get("/:id", deps.StudentService.Get)
-	students.Put("/:id", deps.StudentService.Replace)
-	students.Patch("/:id", deps.StudentService.Patch)
+	students.Put("/:id", middleware.RequireJSON, deps.StudentService.Replace)
+	students.Patch("/:id", middleware.RequireJSON, deps.StudentService.Patch)
 
-	auth := api.Group("/auth", middleware.RequireJSON)
-	auth.Post("/register", deps.AuthService.Register)
-	auth.Post("/login", middleware.LoginRateLimiter(), deps.AuthService.Login)
-	auth.Post("/refresh", deps.AuthService.Refresh)
-	auth.Post("/logout", deps.AuthService.Logout)
+	auth := api.Group("/auth")
+	auth.Post("/register", middleware.RequireJSON, deps.AuthService.Register)
+	auth.Post("/login", middleware.RequireJSON, middleware.LoginRateLimiter(), deps.AuthService.Login)
+	auth.Post("/refresh", middleware.RequireJSON, deps.AuthService.Refresh)
+	auth.Post("/logout", middleware.RequireJSON, deps.AuthService.Logout)
 	auth.Get("/me", middleware.RequireAuth(deps.JWT), deps.AuthService.Me)
 }
 
@@ -48,8 +48,7 @@ func healthCheck(pool *pgxpool.Pool) fiber.Handler {
 		defer cancel()
 
 		if err := pool.Ping(ctx); err != nil {
-			return helper.Fail(c, fiber.StatusServiceUnavailable,
-				"database tidak dapat dihubungi")
+			return helper.ServiceUnavailable("database tidak dapat dihubungi")
 		}
 		return helper.Success(c, fiber.StatusOK, "server dan database berjalan", nil)
 	}
