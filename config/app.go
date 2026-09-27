@@ -25,7 +25,7 @@ func NewApp(logger *slog.Logger, deps route.Dependencies) *fiber.App {
 
 	// Fallback untuk endpoint yang tidak terdaftar
 	app.Use(func(c *fiber.Ctx) error {
-		return helper.Fail(c, fiber.StatusNotFound, "endpoint tidak ditemukan")
+		return helper.NotFound("endpoint tidak ditemukan")
 	})
 
 	return app
